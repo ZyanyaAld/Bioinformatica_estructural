@@ -1,0 +1,219 @@
+---
+title: "Algoritmos en Bioinformática Estructural"
+subtitle: "Día 01 – Fundamentos de estructura de macromoléculas"
+author: "Zyanya Valentina Velazquez Aldrete"
+date: "16/02/2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+bibliography: references.bib
+---
+
+## 1. Introducción
+
+Este documento resume los contenidos revisados en la primera sesión del curso basado en el material de:
+
+Contreras-Moreira B (2018). Algoritmos en bioinformática estructural. Edición 2026. Digital.CSIC. https://doi.org/10.20350/digitalcsic/8544
+
+El objetivo principal del curso es comprender los algoritmos utilizados en bioinformática estructural para estudiar la relación entre secuencia, estructura y función en macromoléculas biológicas.
+
+## 2. Relación entre secuencia, estructura y función
+
+La bioinformática estructural estudia proteínas y ácidos nucleicos desde una perspectiva tridimensional.
+
+Las macromoléculas biológicas:
+
+- ADN
+- ARN
+- Proteínas
+
+constituyen el flujo central de información molecular en la célula.
+
+Dogma central de la biología molecular
+
+ADN → ARN → Proteína
+
+La función biológica depende críticamente de la estructura tridimensional.
+
+## 3. Niveles estructurales en proteínas
+### 3.1 Estructura primaria
+
+Secuencia lineal de aminoácidos.
+
+Ejemplo:
+
+*MFSQHNGAAVHGLRLQSLLIAAMLTAAMAM...*
+
+
+Cada letra representa un aminoácido.
+
+Tipos de mutaciones:
+
+- Sustituciones sinónimas
+- Missense
+- Nonsense
+- Frameshift
+
+### 3.2 Estructura secundaria
+
+Formada por interacciones de puentes de hidrógeno en el backbone.
+
+Principales elementos:
+
+- α-hélice
+- Láminas β (paralelas y antiparalelas)
+- Giros y loops
+
+Estados DSSP (8 estados):
+## Clasificación DSSP de 8 estados
+
+```{r, echo=FALSE}
+library(knitr)
+
+dssp <- data.frame(
+  Codigo = c("G","H","I","T","E","B","S","C"),
+  Descripcion = c(
+    "Hélice 3-10",
+    "α-hélice",
+    "π-hélice",
+    "Turn con puente de H",
+    "Lámina β extendida",
+    "Puente β",
+    "Curvatura pronunciada",
+    "Coil / resto"
+  )
+)
+
+kable(dssp, align="c")
+```
+
+###  Diagrama de Ramachandran
+
+El diagrama de Ramachandran describe las conformaciones permitidas del esqueleto peptídico
+mediante la representación de los ángulos diedros φ (phi) y ψ (psi).
+
+- φ (phi): rotación alrededor del enlace N–Cα  
+- ψ (psi): rotación alrededor del enlace Cα–C  
+
+El enlace peptídico (C–N) es rígido y plano debido a su carácter parcial de doble enlace,
+por lo que la flexibilidad estructural depende principalmente de φ y ψ.
+
+Sin embargo, no todas las combinaciones de φ y ψ son posibles. 
+Algunas conformaciones generan choques estéricos entre átomos.
+
+El diagrama muestra:
+
+- Regiones favorecidas (energéticamente estables)
+- Regiones permitidas
+- Regiones prohibidas
+
+Las principales regiones corresponden a:
+
+- α-hélice derecha
+- Lámina β
+- Hélice izquierda (menos frecuente)
+
+Este diagrama es fundamental para:
+- Validar estructuras experimentales
+- Detectar errores en modelos 3D
+- Analizar calidad estructural
+
+***Representación gráfica***
+
+```{r, echo=FALSE, fig.align="center", out.width="70%"}
+knitr::include_graphics("Day01_ProteinStructure/figures/ramachandran.png")
+```
+*Figura 1. Diagrama de Ramachandran mostrando regiones permitidas para α-hélice y lámina β.*
+
+
+## 4. Estructura terciaria
+
+Corresponde al plegamiento tridimensional completo de una proteína.
+
+**Conceptos importantes:**
+Dominios estructurales
+Núcleo hidrofóbico
+Loops expuestos al solvente
+Contact maps
+RMSD (Root Mean Square Deviation)
+
+La estructura suele conservarse más que la secuencia durante la evolución.
+
+## 5. Estructura cuaternaria
+
+Asociación de múltiples cadenas polipeptídicas.
+
+Ejemplo clásico:
+
+Hemoglobina (tetrámero)
+
+## 6. Estructura del ADN
+
+El ADN forma una doble hélice antiparalela.
+
+Existen tres conformaciones principales:
+
+- A-DNA
+- B-DNA
+- Z-DNA
+
+El emparejamiento de bases:
+
+A-T
+G-C
+
+## 7. Métodos experimentales para determinar estructura
+
+Principales técnicas:
+
+Cristalografía de rayos X
+NMR
+Cryo-EM
+SAXS
+Espectrometría de masas
+Captura de conformación cromosómica (Hi-C)
+
+Cada método tiene ventajas y limitaciones en resolución y dinámica.
+
+## 8. Protein Data Bank
+
+El repositorio estructural principal es el:
+
+Protein Data Bank (PDB)
+
+Formatos principales:
+
+PDB (formato clásico)
+
+mmCIF (estándar actual)
+
+Las estructuras pueden visualizarse en:
+
+PyMOL
+
+Chimera
+
+Jmol
+
+Foldit
+
+## 9. Apéndice: Ejemplo computacional en R
+
+Aunque el curso incluye ejemplos en Perl y Python, aquí simulo el cálculo conceptual de RMSD en R:
+
+```{r}
+# Simulación simple de cálculo RMSD
+
+set.seed(123)
+
+# Coordenadas simuladas de 10 residuos (C-alpha)
+A <- matrix(rnorm(30), ncol=3)
+B <- matrix(rnorm(30), ncol=3)
+
+rmsd <- sqrt(mean(rowSums((A - B)^2)))
+rmsd
+```
+
+Este ejemplo ilustra el fundamento matemático del cálculo de desviación estructural.
