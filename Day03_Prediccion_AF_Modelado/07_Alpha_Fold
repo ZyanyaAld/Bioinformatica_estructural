@@ -1,0 +1,140 @@
+---
+title: "Alpha Fold"
+subtitle: "Día 03 – La Revolucion del Aprendizaje Automatico"
+author: "Contreras Cornejo Yeimi Gissel"
+date: "18/02/2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+bibliography: references.bib
+---
+# 7. AlphaFold y la Revolución del Aprendizaje Automático en Bioinformática Estructural
+
+Este capítulo documenta el hito más importante en la historia de la predicción de estructuras de proteínas: la irrupción de métodos basados en aprendizaje automático (AA) o *machine learning* (ML), liderados por **AlphaFold (AF)**. Estas herramientas han transformado nuestra capacidad para pasar de una secuencia de aminoácidos a un modelo 3D de alta precisión.
+
+## 7.1 La Revolución del Aprendizaje Automático
+
+El impacto del AA se ha medido objetivamente en el experimento bianual **CASP** (Critical Assessment of Structure Prediction).
+
+- **El salto cualitativo:** A partir de CASP13, se observó una mejora significativa gracias a algoritmos capaces de estimar **distancias entre aminoácidos** a partir de alineamientos múltiples (MSA) muy profundos.
+- **El hito de AlphaFold2 (AF2):** En CASP14, AF2 logró una precisión comparable a la experimental en muchos casos, resolviendo un problema de 50 años. El salto en la métrica GDT_TS (Global Distance Test) fue sin precedentes.
+- **Punto clave:** Aunque AF2 predice estructuras con alta fidelidad, **aún no simulamos el proceso físico de plegamiento**; es una hazaña de reconocimiento de patrones a partir de datos evolutivos.
+
+## 7.2 Cómo Funciona AlphaFold2 (AF2)
+
+AF2 es una arquitectura de red neuronal profunda que integra información evolutiva y estructural de manera innovadora.
+
+**Datos de Entrada:**
+1.  **Secuencia Problema (P):** La secuencia de aminoácidos a modelar.
+2.  **Alineamiento Múltiple Profundo (MSA):** Construido con herramientas como HHblits contra enormes bases de datos (UniRef90, MGnify). Proporciona la información evolutiva (coevolución).
+3.  **Estructuras Molde (Templates - opcional):** Estructuras del PDB con cierta similitud para ayudar al inicio del proceso.
+
+**Arquitectura del Modelo (Ver figura en texto original):**
+
+El sistema se basa en dos representaciones complementarias de los datos que se procesan en paralelo y se intercambian información:
+
+1.  **Representación del MSA:** Una matriz que codifica las secuencias homólogas.
+2.  **Representación de Pares:** Una matriz que codifica la información de cada par de residuos (distancia, ángulo, etc.).
+
+**Módulos Principales:**
+
+- **Evoformer:** El núcleo de AF2. Es un bloque de red neuronal que procesa iterativamente las representaciones del MSA y de Pares. Utiliza **mecanismos de atención** (similares a los usados en NLP) para:
+    - Entender las relaciones evolutivas entre residuos a lo largo de las secuencias del MSA.
+    - Inferir relaciones espaciales directas entre residuos.
+    - El resultado es una representación refinada que codifica la estructura probable de la proteína.
+- **Módulo Estructural:** Toma la salida del Evoformer y la traduce en coordenadas 3D. Modela explícitamente la cadena polipeptídica usando **geometría de rotaciones y traslaciones** para cada aminoácido.
+- **Reciclaje (Recycling):** El proceso completo (Evoformer + Módulo Estructural) se repite tres veces. La salida de una ronda se realimenta a la entrada para refinar las predicciones.
+
+**Post-Procesamiento:**
+- **Relajación:** Se aplica una breve minimización con el campo de fuerzas **AMBER** para eliminar choques estéricos y mejorar la geometría local.
+
+### 7.2.1 Métricas de Calidad de AlphaFold2 (AF2)
+
+AF2 no solo predice coordenadas, sino que también proporciona estimaciones de su propia confianza.
+
+1.  **pLDDT (predicted Local Distance Difference Test):**
+    - **Qué es:** Es una puntuación por residuo (de 0 a 100) que predice la confianza local del modelo (análoga al lDDT experimental).
+    - **Interpretación:**
+        - `pLDDT > 90`: Muy alta confianza. El modelo es excelente.
+        - `70 < pLDDT < 90`: Alta confianza. Modelo bueno, pero puede haber pequeñas imprecisiones.
+        - `50 < pLDDT < 70`: Baja confianza. La región puede ser desordenada o el modelo es incierto.
+        - `pLDDT < 50`: Muy baja confianza. Indica probable **desorden** (regiones intrínsecamente desordenadas, loops muy largos).
+    - **Uso:** Se almacena en la columna de "Factor de Temperatura" (B-factor) del archivo PDB resultante.
+
+2.  **PAE (Predicted Aligned Error):**
+    - **Qué es:** Es una matriz 2D que predice el error posicional esperado (en Å) si se superpusieran dos residuos `i` y `j`. Es una medida de la confianza **relativa** entre dominios.
+    - **Uso:** Esencial para evaluar la orientación de dominios en proteínas multidominio. Si el PAE entre dos dominios es bajo, su orientación relativa es fiable; si es alto, podrían estar mal posicionados uno respecto al otro.
+
+## 7.3 Evaluación de las Predicciones de AlphaFold2 (AF2)
+
+**Fortalezas:**
+- **Precisión sin precedentes:** Logra un RMSD promedio de ~1.5 Å para todos los átomos en la mayoría de los casos, comparable a la cristalografía de rayos X de baja resolución.
+- **Cobertura masiva:** La **AlphaFold Protein Structure Database** (AlphaFold DB) contiene >214M de estructuras predichas (a 2026), cubriendo proteomas completos de múltiples especies y todas las secuencias de UniProt.
+- **Enriquecimiento estructural:** Ha permitido descubrir nuevos plegamientos y ha multiplicado el número de dominios conocidos para muchas superfamilias, llenando vacíos en nuestro conocimiento del "universo de las proteínas".
+
+**Limitaciones:**
+- **Dependencia del MSA:** La calidad de la predicción cae drásticamente si el MSA tiene menos de **~30 secuencias homólogas efectivas**.
+- **Regiones flexibles/desordenadas:** Tiene dificultades para modelar regiones con pocos contactos internos, como loops muy largos o regiones intrínsecamente desordenadas, que a menudo se predicen con bajo pLDDT.
+- **Conformaciones alternativas:** Predice un único estado, generalmente el más estable (apo), y no las conformaciones inducidas por ligandos (holo) u otros cambios conformacionales.
+
+## 7.4 Qué Cambia con AlphaFold3 (AF3)
+
+AF3 es una evolución significativa, no solo una mejora incremental.
+
+- **Objetivo principal:** Especializado en la predicción de **interacciones moleculares**. Puede modelar complejos que contienen proteínas, **ADN, ARN, ligandos pequeños, iones** y modificaciones químicas.
+- **Innovaciones algorítmicas:**
+    1.  **Módulo de Difusión (Pairformer → Diffusion Module):** Reemplaza gran parte del procesamiento post-Evoformer. Es un modelo generativo que **predice directamente las coordenadas atómicas** de todos los átomos (no solo del esqueleto) mediante un proceso de "difusión" (eliminando ruido paso a paso hasta llegar a la estructura final).
+    2.  **Representación Unificada:** Representa todos los átomos (proteína, ADN, ligandos) en una misma "bolsa de átomos", lo que le permite aprender las interacciones entre diferentes tipos de moléculas.
+    3.  **Procesamiento de MSA simplificado:** Aunque sigue usándolo, el flujo es más eficiente.
+
+## 7.5 Otros Algoritmos Alternativos a AlphaFold
+
+La revolución del AA ha producido varias alternativas notables, cada una con sus fortalezas:
+
+1.  **RoseTTAFold:**
+    - Un "todo en uno" que integra información de secuencia (1D), distancia (2D) y coordenadas (3D) en una arquitectura de red de tres vías que se comunican entre sí. Muy exitoso y también de código abierto.
+
+2.  **ESMFold (Evolutionary Scale Modeling):**
+    - Un **modelo de lenguaje proteico** de gran escala. Se entrena con secuencias (sin estructura) para predecir la probabilidad de una secuencia.
+    - **Ventaja clave:** Es **extremadamente rápido**. No necesita buscar un MSA en el momento de la predicción, ya que la información evolutiva está "aprendida" en los pesos de la red. Ideal para explorar grandes cantidades de secuencias rápidamente.
+
+3.  **RGN2 (Recurrent Geometric Network v2):**
+    - También es un modelo de lenguaje.
+    - **Ventaja clave:** Funciona bien con **secuencias huérfanas** (sin homólogos conocidos), un talón de Aquiles de AF2 y RoseTTAFold. Los autores muestran que en estos casos supera a AF2, siendo además mucho más rápido.
+
+4.  **RFdiffusion:**
+    - No es un predictor, sino un **generador/diseñador de proteínas** basado en RoseTTAFold. Utiliza la difusión para "diseñar" nuevas proteínas desde cero que cumplan con una función deseada.
+
+## 7.6 Aplicaciones de AlphaFold y Algoritmos Similares
+
+La disponibilidad de modelos de alta calidad ha revolucionado múltiples áreas:
+
+1.  **Predicción del Efecto de Mutaciones (SNPs):** Se ha demostrado que las predicciones de AF2 pueden ser tan buenas o mejores que los métodos experimentales de *deep mutational scanning* para clasificar variantes como dañinas o benignas.
+2.  **Predicción de Cavidades de Unión a Ligandos:** En modelos con pLDDT > 90, las cavidades predichas son indistinguibles de las experimentales. Herramientas como **AlphaFill** pueden trasplantar ligandos de estructuras homólogas a los modelos AF.
+3.  **Predicción de Complejos y Multímeros:**
+    - **Proteína-proteína:** AF2-multímero y AF3 pueden predecir la estructura de complejos proteicos, incluyendo homo-oligómeros e interacciones transitorias.
+    - **Proteína-ADN/ARN:** AF3 ha abierto la puerta a la predicción confiable de complejos con ácidos nucleicos.
+4.  **Diseño de Proteínas:** Combinado con métodos como RFdiffusion, se pueden diseñar proteínas con funciones a la carta (nuevas enzimas, sensores, etc.).
+5.  **Ayuda a la Cristalografía y Cryo-EM:** Los modelos de AF son excelentes puntos de partida para el **reemplazamiento molecular** en cristalografía y para la interpretación de mapas de cryo-EM de baja resolución.
+
+## 7.7 Cómo Obtener y Usar Modelos de AlphaFold
+
+Hay múltiples vías de acceso, desde simples consultas hasta ejecuciones personalizadas:
+
+1.  **Base de Datos Precalculada (Más Rápido):**
+    - **Sitio web:** [AlphaFold Protein Structure Database](https://alphafold.ebi.ac.uk)
+    - **Acción:** Buscar por identificador UniProt, secuencia u organismo. Descargar modelos ya calculados.
+
+2.  **Servidor Web AF3 (Para Cálculos Nuevos):**
+    - **Sitio web:** [AlphaFold Server](https://alphafoldserver.com)
+    - **Acción:** Ideal para modelar monómeros, multímeros y complejos con ADN/ARN de forma gratuita, sin necesidad de instalar nada localmente.
+
+3.  **Instalación Local (Para Alto Rendimiento):**
+    - **AlphaFold2 (Docker):** El repositorio oficial de DeepMind permite una instalación completa, aunque requiere ~2.2 TB de espacio para todas las bases de datos.
+    - **OpenFold:** Una reimplementación fiel de AF2 en PyTorch, más fácil de modificar y ejecutar.
+
+4.  **Cuadernos Colab (Para Experimentación Rápida):**
+    - **[ColabFold](https://github.com/sokrypton/ColabFold):** La opción más popular. Combina la búsqueda ultrarrápida de homólogos con **MMseqs2** y la predicción con AF2 o RoseTTAFold. Corre en la nube de Google de forma gratuita.
+    - **[OpenFold Colab](https://colab.research.google.com/github/aqlaboratory/openfold/blob/main/notebooks/OpenFold.ipynb):** Para ejecutar la versión PyTorch de AF2.
