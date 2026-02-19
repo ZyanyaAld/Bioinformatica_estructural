@@ -1,0 +1,131 @@
+---
+title: "Prediccion y Modelado de Proteinas"
+subtitle: "Día 03 – Fold Recognition y Modelado"
+author: "Contreras Cornejo Yeimi Gissel"
+date: "18/02/2026"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+bibliography: references.bib
+---
+# 5. Predicción de la Estructura de Proteínas
+
+Este documento resume los principales métodos computacionales para predecir la estructura tridimensional de una proteína a partir de su secuencia de aminoácidos. Se abordan desde técnicas de reconocimiento de pliegues hasta el modelado por homología y métodos avanzados basados en evolución.
+
+## 5.2 Reconocimiento de Pliegues (Fold Recognition - FR)
+
+**Problema:** Se tiene una secuencia problema que no muestra similitud significativa con proteínas de función conocida en búsquedas convencionales (BLAST/FASTA). Sin embargo, podría plegarse en una estructura 3D ya conocida.
+
+**Hipótesis:** La evolución conserva la estructura 3D mejor que la secuencia. Por lo tanto, podemos buscar compatibilidad con un "fold" o plegamiento conocido.
+
+**Solución Propuesta:** Comparar la secuencia problema con una biblioteca de plegamientos conocidos (ej. un subconjunto no redundante del PDB) y determinar con cuál es más compatible.
+
+**Principales Estrategias de FR:**
+
+1.  **Búsquedas PSI-BLAST Transitivas:** Se busca iterativamente hasta encontrar, en alguna ronda, una secuencia con estructura conocida (template). La transitividad (ir de A a B, y de B a C) sugiere una relación lejana.
+2.  **Perfiles de Secuencia y HMMs:** Se representa cada plegamiento por un perfil (matriz PSSM) o un Modelo Oculto de Márkov (HMM) construido a partir de sus secuencias homólogas conocidas.
+3.  **Alineamiento Perfil-Perfil:** Es la técnica más sensible. Compara el perfil de la secuencia problema contra una base de datos de perfiles de estructuras conocidas. Es la base del éxito de servidores como **HHpred**.
+4.  **Threading (Enhebrado):** Literalmente "enhebra" la secuencia problema en las coordenadas 3D de cada estructura conocida. Evalúa la "compatibilidad" usando **potenciales estadísticos** (ej. frecuencia con la que dos aminoácidos se encuentran a una cierta distancia en estructuras conocidas).
+
+**Evaluación Objetiva:**
+
+- **CASP:** Experimento a ciegas que evalúa la calidad de los métodos de predicción cada dos años.
+- **CAMEO:** Evaluación continua y automática de servidores de predicción.
+
+**Herramientas Clave:**
+
+- **HHpred:** Servidor web líder basado en alineamientos perfil-perfil.
+- **I-TASSER:** Reconocido por su consistencia y resultados superiores en los casos más complejos.
+- **Phyre2:** Otro servidor web muy completo.
+- **hh-suite:** Suite de software para correr HHpred localmente, ideal para experimentos a gran escala.
+
+## 5.3 Modelado por Homología (o Modelado Comparativo)
+
+**Problema:** Se desea conocer la estructura tridimensional aproximada de una proteína.
+
+**Solución Propuesta:** Construir un modelo 3D basándose en la(s) estructura(s) conocida(s) de proteínas homólogas, llamadas **moldes** o **templates**.
+
+**Requisito Fundamental:** Encontrar al menos un molde con similitud de secuencia detectable y un alineamiento correcto entre la secuencia problema y el molde. La calidad del modelo está limitada por la calidad de este paso.
+
+**Pasos del Modelado por Homología:**
+
+1.  **Identificar Dominios:** Dividir la secuencia problema en dominios si es posible.
+2.  **Buscar Moldes:** Para cada dominio, buscar en el PDB proteínas con estructura conocida y similitud de secuencia.
+3.  **Refinar Alineamiento:** Obtener el mejor alineamiento posible entre la secuencia del dominio y la del molde.
+4.  **Construir el Modelo:** Hay dos estrategias principales:
+    - **Ensamblaje de Fragmentos Rígidos:** Copiar y pegar coordenadas de fragmentos del molde (usado por **SWISS-MODEL**, **ROBETTA**).
+    - **Satisfacción de Restricciones (Satisfaction of Spatial Restraints):** Derivar restricciones (distancias, ángulos, dihedrales) del molde y de bases de datos, y generar un modelo que las cumpla (usado por **MODELLER**).
+5.  **Modelar Regiones Variables:**
+    - **Cadenas Laterales:** Copiar rotámeros de residuos conservados, modelar los mutados usando bibliotecas de rotámeros.
+    - **Lazos (Loops):** Modelar las inserciones/deleciones (gaps) que no tienen equivalente en el molde.
+6.  **Refinar y Evaluar:** Optimizar el modelo (eliminar choques estéricos) y evaluar su calidad con herramientas como **ProQ3**, **Verify3D** o la función **DOPE** de MODELLER.
+
+**Herramientas Clave:**
+
+- **SWISS-MODEL:** Servidor web muy popular y fácil de usar.
+- **MODELLER:** Programa instalable, muy flexible y potente. El estándar de facto para usuarios avanzados.
+
+## 5.4 Modelado Ab Initio
+
+**Problema:** No se encuentra ningún molde, ni siquiera por FR. Se necesita modelar desde cero.
+
+**Solución Propuesta:** Predecir la estructura basándose únicamente en la secuencia y principios fisicoquímicos, pero los métodos más exitosos usan fragmentos de estructuras conocidas.
+
+**Algoritmo Rosetta (ejemplo principal):**
+
+1.  **Fragmentación:** Dividir la secuencia problema en fragmentos cortos (ej. de 9 aminoácidos, solapantes).
+2.  **Búsqueda en Biblioteca:** Para cada fragmento, buscar en una biblioteca de fragmentos de proteínas del PDB aquellos con secuencias más parecidas.
+3.  **Ensamblaje y Muestreo:** Combinar los fragmentos seleccionados de manera solapante para generar miles de conformaciones diferentes.
+4.  **Optimización y Selección:** Evaluar las conformaciones generadas con funciones de energía (que consideran interacciones no locales) y seleccionar las de menor energía (supuestamente las más cercanas a la estructura nativa).
+
+**Herramientas Clave:**
+
+- **ROBETTA:** Servidor web que implementa el algoritmo Rosetta.
+- **I-TASSER:** También funciona para modelado ab initio.
+
+## 5.5 Modelado por Predicción de Contactos
+
+**Problema:** No se encuentra un molde global, pero se tienen muchas secuencias homólogas de la proteína.
+
+**Solución Propuesta:** Usar la información evolutiva contenida en un alineamiento múltiple de secuencias para predecir qué residuos están en contacto en la estructura 3D, y luego usar esos contactos para guiar el plegamiento.
+
+**Concepto Clave - Coevolución:** Si dos residuos están cerca en la estructura 3D, una mutación en uno podría verse compensada por una mutación en el otro para mantener la función/estructura. Esto crea una correlación estadística entre las dos posiciones en el alineamiento múltiple.
+
+**Métricas:**
+
+- **Información Mutua (MI):** Mide la dependencia estadística local entre dos columnas de un alineamiento. Es útil pero puede detectar correlaciones "transitivas" (A correlaciona con C porque ambas contactan con B) que no son contactos directos.
+- **Información Directa (DI):** Es un modelo global que busca distinguir las correlaciones directas (causativas) de las transitivas, mejorando enormemente la precisión de la predicción de contactos. Es la base de métodos como **EVfold**.
+
+**Flujo de trabajo de EVfold:**
+
+1.  Reunir muchas secuencias homólogas.
+2.  Calcular un alineamiento múltiple profundo.
+3.  Calcular la Información Directa (DI) para todos los pares de residuos.
+4.  Seleccionar los pares con alta DI como **predicciones de contacto**.
+5.  Usar estos contactos predichos como restricciones para generar un modelo 3D.
+
+**Herramientas Clave:**
+
+- **EVfold/GREMLIN:** Métodos que implementan esta filosofía. El uso de secuencias metagenómicas ha permitido predecir estructuras de miles de familias de proteínas sin necesidad de moldes homólogos.
+
+## 5.6 Mutaciones Puntuales en Proteínas
+
+**Problema:** Se tiene una variante genética (SNP no sinónimo) que cambia un aminoácido en una proteína. Se desea predecir si esta mutación es dañina (deletérea) o benigna.
+
+**Solución Propuesta:** Usar información evolutiva, estructural y fisicoquímica para inferir el impacto de la mutación sobre la función y estabilidad de la proteína.
+
+**Clasificación de Métodos:**
+
+1.  **Basados en Evolución:** Evalúan si el aminoácido mutado está conservado evolutivamente en la familia de proteínas. Si un residuo es siempre igual a lo largo de la evolución, es probable que su cambio sea dañino.
+    - **Ejemplo: SIFT**.
+2.  **Basados en Estructura:** Requieren un modelo 3D de la proteína. Evalúan el contexto del residuo mutado:
+    - **Enterrado vs. Expuesto:** Mutar un residuo enterrado (en el núcleo hidrofóbico) suele ser más desestabilizador que mutar uno en la superficie.
+    - **Contexto de Estructura Secundaria:** El efecto de una mutación depende de si está en una hélice, lámina o loop.
+    - **Interacciones:** Si el residuo forma parte de una interfaz de unión o un sitio activo, es probable que su mutación sea crítica.
+    - **Ejemplos: PolyPhen-2, mCSM**.
+3.  **Híbridos:** Combinan múltiples tipos de evidencias (evolutivas, estructurales, de secuencia, de bases de datos de patologías).
+    - **Ejemplo: SusPect**, que integra muchas fuentes de datos para mutaciones humanas.
+
+**Conclusión:** Para una predicción robusta, lo mejor es usar una combinación de herramientas (ej. SIFT + PolyPhen-2 + SusPect) e interpretar los resultados a la luz del contexto estructural (si se dispone de un modelo 3D de calidad).
