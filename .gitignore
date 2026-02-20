@@ -4,3 +4,6 @@
 .Ruserdata
 *.html
 *.log
+*.pdb
+*.zip
+*.json
